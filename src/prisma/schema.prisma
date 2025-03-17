@@ -1,0 +1,415 @@
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// DB SETTINGS ///////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////// Collection: user  //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model user {
+  id                       String            @id @default(auto()) @map("_id") @db.ObjectId
+  // 가입 유저 정보
+  mobileNumber             String            @unique(map: "mobileNumber_1") /// 전화번호
+  gender                   Boolean     /// 성별
+  nickname                 String            /// 닉네임
+  name                     String            /// 이름
+  birthYear                Int               @db.Int /// 출생연도
+  residence                Int               @db.Int /// 거주지
+
+  ticket                   Int?              @db.Int /// 이용권
+  manner                   Int?              @db.Int /// 매너 온도
+
+  // 계정 관련 정보
+  integration              String /// 계정 연동
+  verification             UserVerification? /// 인증 상태
+  dateJoin                 DateTime          @default(now()) @db.Date /// 가입일
+  dateAcceptTerms          DateTime          @db.Date /// 약관동의 일자
+  dateAcceptMarketing      DateTime?         @db.Date /// 마케팅동의 일자
+  dateDormancy             DateTime?         @db.Date /// 휴면 일자
+  dateSuspension           DateTime?         @db.Date /// 이용정지 일자
+  dateAuthBlock            DateTime?         @db.Date /// 인증차단
+  dateWithdrawal           DateTime?         @db.Date /// 탈퇴
+  // 구현용 기타
+  informationBeforeMeeting Int?              @db.Int /// 만나기 전 정보
+  kakaoId                  String? /// 카카오 아이디
+  tmpJob                   String? /// 임시 직업
+
+  // 편지
+  letter                   UserLetter[]
+  // 사진
+  photo                    UserPhoto[]
+
+  // 심사 유저 정보
+  promotion                UserPromotion?
+
+  // 유저 배지 인증 관련
+  badge                    UserBadge?
+  // 유저 정보 공개 관리
+  visibility               UserVisibility?
+
+  // 신청서 - 내정보
+  lifestyle                UserLifestyle? /// 생활
+  personality              UserPersonality? /// 성격
+  values                   UserValues? /// 가치관
+  appearance               UserAppearance? /// 외모
+  datingstyle              UserDatingstyle? /// 연애스타일
+
+
+  // 타겟팅 외래 정보
+  targeting                targeting?       @relation("user-targeting")
+  // 매칭 외래 정보
+  matching_female          matching[]       @relation("user_female-matching")
+  matching_male            matching[]       @relation("user_male-matching")
+}
+
+/// user.promotion
+type UserPromotion {
+  jobType        Int?    @db.Int /// 직장유형
+  jobName        String? /// 직장명
+  jobGroup       String? /// 직업
+  salary         Int?    @db.Int /// 연봉
+  height         Int?    @db.Int /// 키
+  university     Int?    @db.Int /// 대학
+  education      Int?    @db.Int /// 최종 학력
+  universityName String? /// 대학명
+  divorce        Boolean? /// 돌싱여부
+}
+
+/// user.badge
+type UserBadge {
+  /// 1. 신분
+  identity  Int? @db.Int
+  /// 2. 직장
+  job       Int? @db.Int
+  /// 3. 연봉
+  salary    Int? @db.Int
+  /// 4. 키
+  height    Int? @db.Int
+  /// 5. 가족관계
+  family    Int? @db.Int
+  /// 6. 학력
+  education Int? @db.Int
+}
+
+/// user.visibility
+type UserVisibility {
+  universityName Boolean? /// 대학명
+  jobName        Boolean? /// 직장명
+}
+
+/// user.verification
+type UserVerification {
+  status           Int                               @db.Int @default(0) /// 0: 승급미신청, 1:승급대기중, 2:승급반려, 3:승급영구반려, 4:승급완료
+  approvalDetail   UserVerificationApprovalDetail? /// 승인 상세
+  rejectionDetails UserVerificationRejectionDetail[] /// 반려 상세
+  rejectionCount   Int?                              @db.Int /// 반려 횟수
+}
+
+/// user.verification.approvalDetails
+type UserVerificationApprovalDetail {
+  reason    String /// 반려 사유
+  handledBy String /// 반려 처리자
+  date      DateTime @db.Date /// 승인 일자
+}
+
+/// user.verification.rejectionDetails
+type UserVerificationRejectionDetail {
+  reason    String /// 반려 사유
+  handledBy String /// 반려 처리자
+  date      DateTime @db.Date /// 반려 일자
+}
+
+/// user.photo
+type UserPhoto {
+  index     Int                  @db.Int /// 사진 매핑 ID
+  //
+  url       String /// 사진 URL
+  createdAt DateTime             @db.Date @default(now()) /// 생성 일자
+}
+
+/// user.letter
+type UserLetter {
+  index     Int      @db.Int /// 편지 매핑 ID
+  //
+  status    Int      @db.Int /// 공개 여부
+  content   String /// 편지 내용
+  createdAt DateTime @db.Date @default(now()) /// 생성 일자
+  updatedAt DateTime @db.Date @default(now()) /// 업데이트 일자
+}
+
+/// user.lifestyle
+type UserLifestyle {
+  fillStatus   Int   @db.Int @map("_fillStatus")
+  //
+  workType     Int?  @db.Int /// 근무 형태
+  smoking      Int?  @db.Int /// 흡연 경력
+  drinking     Int?  @db.Int /// 음주 생활
+  interest     Int[] @db.Int /// 관심사
+  numberDating Int?  @db.Int /// 연애 횟수
+  athleticLife Int?  @db.Int /// 운동 생활
+  petAnimal    Int?  @db.Int /// 반려동물
+  religion     Int?  @db.Int /// 종교
+}
+
+/// user.personality
+type UserPersonality {
+  fillStatus          Int   @db.Int @map("_fillStatus")
+  //
+  extrovert_introvert Int?  @db.Int /// 외향/내향
+  intuition_reality   Int?  @db.Int /// 직관/현실
+  emotion_reason      Int?  @db.Int /// 감정/이성
+  impromptu_plan      Int?  @db.Int /// 즉흥/계획
+  personalityCharm    Int[] @db.Int /// 성격 매력
+}
+
+/// user.values
+type UserValues {
+  fillStatus              Int  @db.Int @map("_fillStatus")
+  //
+  marriageValues          Int? @db.Int /// 결혼 가치관
+  oppositeSexFriendValues Int? @db.Int /// 이성 친구 가치관
+  politicalValues         Int? @db.Int /// 정치 성향
+  consumptionValues       Int? @db.Int /// 소비 가치관
+  careerFamilyValues      Int? @db.Int /// 커리어와 가정 가치관
+  childrenValues          Int? @db.Int /// 자녀 가치관
+}
+
+/// user.appearance
+type UserAppearance {
+  fillStatus    Int   @db.Int   @map("_fillStatus")
+  //
+  animalImage   Int?  @db.Int /// 동물 이미지
+  doubleEyelid  Int?  @db.Int /// 쌍꺼풀
+  bodyType      Int?  @db.Int /// 체형
+  externalCharm Int[] @db.Int /// 외적 매력
+  tattoo        Int?  @db.Int /// 문신 유무
+}
+
+/// user.datingstyle
+type UserDatingstyle {
+  fillStatus               Int  @db.Int @map("_fillStatus")
+  //
+  preferredDate            Int? @db.Int /// 선호 데이트
+  preferredContactMethod   Int? @db.Int /// 선호 연락 수단
+  loveInitiative           Int? @db.Int /// 연애 주도성
+  datingFrequency          Int? @db.Int /// 데이트 빈도
+  contactStyle             Int? @db.Int /// 연락 스타일
+  premaritalPurity         Int? @db.Int /// 혼전순결
+  conflictResolutionMethod Int? @db.Int /// 갈등 해결 방법
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////// Collection: targeting  ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model targeting {
+  /// ObjectId
+  id                       String               @id @default(auto()) @map("_id") @db.ObjectId // _id
+  userId                   String               @unique(map: "userId") @db.ObjectId /// user._id
+  fillStatus               Int                  @db.Int @map("_fillStatus")
+  matchingType             TargetingField? /// 매칭 유형
+  // 가입
+  birthYear                RangeTargetingField? /// 생년월일(나이)
+  residence                TargetingField? /// 거주지
+  // 심사
+  jobType                  TargetingField? /// 직장 유형
+  salary                   RangeTargetingField? /// 연봉
+  height                   RangeTargetingField? /// 키
+  university               TargetingField? /// 대학
+  divorce                  TargetingField? /// 돌싱 여부
+  // 생활
+  workType                 TargetingField? /// 근무 형태
+  smoking                  TargetingField? /// 흡연 경력
+  drinking                 TargetingField? /// 음주 생활
+  interest                 TargetingField? /// 관심사
+  numberDating             TargetingField? /// 연애 횟수
+  athleticLife             TargetingField? /// 운동 생활
+  petAnimal                TargetingField? /// 반려동물
+  religion                 TargetingField? /// 종교
+  // 성격
+  extrovert_introvert      TargetingField? /// 외향/내향
+  intuition_reality        TargetingField? /// 직관/현실
+  emotion_reason           TargetingField? /// 감정/이성
+  impromptu_plan           TargetingField? /// 즉흥/계획
+  personalityCharm         TargetingField? /// 성격 매력
+  // 가치관
+  marriageValues           TargetingField? /// 결혼 가치관
+  oppositeSexFriendValues  TargetingField? /// 이성 친구 가치관
+  politicalValues          TargetingField? /// 정치 성향
+  consumptionValues        TargetingField? /// 소비 가치관
+  careerFamilyValues       TargetingField? /// 커리어와 가정 가치관
+  childrenValues           TargetingField? /// 자녀 가치관
+  // 외모
+  animalImage              TargetingField? /// 동물 이미지
+  doubleEyelid             TargetingField? /// 쌍꺼풀
+  bodyType                 TargetingField? /// 체형
+  externalCharm            TargetingField? /// 외적 매력
+  tattoo                   TargetingField? /// 문신 유무
+  // 연애스타일
+  preferredDate            TargetingField? /// 선호 데이트
+  preferredContactMethod   TargetingField? /// 선호 연락 수단
+  loveInitiative           TargetingField? /// 연애 주도성
+  datingFrequency          TargetingField? /// 데이트 빈도
+  contactStyle             TargetingField? /// 연락 스타일
+  premaritalPurity         TargetingField? /// 혼전순결
+  conflictResolutionMethod TargetingField? /// 갈등 해결 방법
+
+  // user 외래 정보
+  user                     user            @relation("user-targeting", fields: [userId], references: [id])
+}
+
+type TargetingField {
+  data     Int[]  @db.Int
+  priority Int?   @db.Int
+}
+
+type RangeTargetingField {
+  from     Int?   @db.Int
+  to       Int?   @db.Int
+  priority Int?   @db.Int
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////// Collection: matching  ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model matching {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  // 
+  fChoice     Int                @db.Int /// 여자 선택
+  mChoice     Int                @db.Int /// 남자 선택
+  femaleId    String             @db.ObjectId /// 여자 아이디
+  maleId      String             @db.ObjectId /// 남자 아이디
+  fFeedback   MatchingFFeedback? /// 여자 '매칭' 피드백
+  mFeedback   MatchingMFeedback? /// 남자 '매칭' 피드백
+  //
+  status      Boolean /// 상태
+  deadline    DateTime           @db.Date /// 마감일
+  phase       Int                @db.Int /// 회차
+  //
+  createdAt   DateTime           @db.Date /// 생성 일자
+  updatedAt   DateTime           @db.Date /// 업데이트 일자
+  createdBy   String /// 매칭 생성자
+  //
+  agreement   MatchingAgreement? /// 성사
+
+
+  // user 외래 정보 
+  user_female user?              @relation("user_female-matching", fields: [femaleId], references: [id])
+  user_male   user?              @relation("user_male-matching",   fields: [maleId],   references: [id])
+
+  // unique index
+  @@unique([femaleId, maleId], map: "matching_pair")
+}
+
+/// matching.agreement
+type MatchingAgreement {
+  /// ObjectId
+  id        String                      @map("_id") @db.ObjectId
+  // 
+  fStatus   Int                         @db.Int /// 여자 상태
+  mStatus   Int                         @db.Int /// 남자 상태
+  //
+  fFeedback MatchingAgreementFFeedback? /// 여자 '성사' 피드백
+  mFeedback MatchingAgreementMFeedback? /// 남자 '성사' 피드백
+  //
+  status    Boolean /// '성사' 상태
+  //
+  updatedAt DateTime                    @db.Date
+  createdAt DateTime                    @db.Date
+}
+
+/// matching.fFeedback
+type MatchingFFeedback {
+  comment String
+  option  Int[]  @db.Int
+  score   Int    @db.Int
+}
+
+/// matching.mFeedback
+type MatchingMFeedback {
+  comment String
+  option  Int[]  @db.Int
+  score   Int    @db.Int
+}
+
+/// matching.agreement.fFeedback
+type MatchingAgreementFFeedback {
+  comment String
+  option  Int[]  @db.Int
+  score   Int    @db.Int
+}
+
+/// matching.agreement.mFeedback
+type MatchingAgreementMFeedback {
+  comment String
+  option  Int[]  @db.Int
+  score   Int    @db.Int
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////// Collection: auth_sens  ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model auth_sens {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  //
+  code         String
+  count        Int      @db.Int
+  createdAt    DateTime @db.Date
+  mobileNumber String   @unique
+  succeedAt    DateTime @db.Date
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////// Collection: mapper  ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model mapper {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////// Collection: session  ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model session {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  jti          String    @unique
+  createdAt    DateTime  @db.Date
+  deletedAt    DateTime?
+  device       String
+  ip           String
+  refreshCount Int       @db.Int
+  updatedAt    DateTime  @db.Date
+  userAgent    String
+  userId       String    @unique @db.ObjectId
+  valid        Boolean
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////// Collection: global  ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model global {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  phase     Int      @db.Int
+  status    Boolean
+  createdAt DateTime @db.Date
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////// Collection: term  /////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+model term {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  //
+  content   String
+  createdAt DateTime @db.Date
+  expiredAt DateTime @db.Date
+  required  Boolean
+  title     String
+  updatedAt DateTime @db.Date
+}
